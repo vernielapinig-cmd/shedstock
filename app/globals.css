@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 10px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #eef2f0;
+  color: #1b211f;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-oswald), sans-serif;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.pegboard {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.14) 1.6px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+
+.pegboard-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1.6px, transparent 1.6px);
+  background-size: 24px 24px;
+}
+
+::placeholder {
+  color: #8b9793;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -6px);
+  }
+}
+
+.toast-enter {
+  animation: toast-in 0.2s ease forwards;
+}
+
+@layer components {
+  .field-input {
+    @apply w-full rounded-lg border border-border bg-surface-2 px-3 py-[11px] text-[14px] text-ink outline-none;
+  }
+  .field-input:focus {
+    @apply bg-white ring-2 ring-accent;
+  }
+  .field-textarea {
+    @apply field-input min-h-[70px] resize-y;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border-none px-[18px] py-[11px] text-[14px] font-semibold transition-transform active:scale-[0.98];
+  }
+  .btn-primary {
+    @apply btn bg-accent text-accent-ink hover:opacity-90;
+  }
+  .btn-ghost {
+    @apply btn border border-border bg-transparent text-primary;
+  }
+  .btn-dark {
+    @apply btn bg-primary text-white;
+  }
+  .btn-danger {
+    @apply btn bg-rust-bg text-rust;
+  }
+}
