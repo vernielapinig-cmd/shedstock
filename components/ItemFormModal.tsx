@@ -22,35 +22,40 @@ export function ItemFormModal({
 
   const [name, setName] = useState(item?.name || "");
   const [category, setCategory] = useState(item?.category || CATEGORIES[0]);
-  const [quantity, setQuantity] = useState(item?.quantity || 1);
+  const [quantityText, setQuantityText] = useState(String(item?.quantity || 1));
+  const quantityValue = Math.max(1, parseInt(quantityText, 10) || 1);
   const [location, setLocation] = useState(item?.location || "");
   const [status, setStatus] = useState<ItemStatus>(item?.status || "Available");
   const [notes, setNotes] = useState(item?.notes || "");
   const [error, setError] = useState<string | null>(null);
 
-  function handleSave() {
-    if (!name.trim() || !location.trim()) {
-      setError("Please add a name and location.");
-      return;
-    }
-    setError(null);
-    const input = { name, category, quantity, location, status, notes };
+  function adjustQuantity(delta: number) {
+  setQuantityText(String(Math.max(1, quantityValue + delta)));
+}
 
-    startTransition(async () => {
-      try {
-        if (editing && item) {
-          await updateItem(item.id, input);
-          toast("Item updated");
-        } else {
-          await addItem(input);
-          toast("Item added to registry");
-        }
-        onClose();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong.");
-      }
-    });
+function handleSave() {
+  if (!name.trim() || !location.trim()) {
+    setError("Please add a name and location.");
+    return;
   }
+  setError(null);
+  const input = { name, category, quantity: quantityValue, location, status, notes };
+
+  startTransition(async () => {
+    try {
+      if (editing && item) {
+        await updateItem(item.id, input);
+        toast("Item updated");
+      } else {
+        await addItem(input);
+        toast("Item added to registry");
+      }
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    }
+  });
+}
 
   return (
     <div
@@ -89,24 +94,50 @@ export function ItemFormModal({
           <div className="mb-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-[12px] font-semibold text-ink-soft">Category</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="field-input">
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[12px] font-semibold text-ink-soft">Quantity</label>
               <input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                list="categoryList"
+                placeholder="e.g. Tools"
                 className="field-input"
               />
+              <datalist id="categoryList">
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
+           <div>
+  <label className="mb-1.5 block text-[12px] font-semibold text-ink-soft">Quantity</label>
+  <div className="flex items-center gap-2">
+    <button
+      type="button"
+      onClick={() => adjustQuantity(-1)}
+      disabled={quantityValue <= 1}
+      className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 text-[16px] font-bold text-ink-soft disabled:opacity-40"
+      aria-label="Decrease quantity"
+    >
+      −
+    </button>
+    <input
+      type="number"
+      inputMode="numeric"
+      min={1}
+      value={quantityText}
+      onChange={(e) => setQuantityText(e.target.value)}
+      onBlur={() => setQuantityText(String(quantityValue))}
+      className="field-input text-center"
+    />
+    <button
+      type="button"
+      onClick={() => adjustQuantity(1)}
+      className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border border-border bg-surface-2 text-[16px] font-bold text-ink-soft"
+      aria-label="Increase quantity"
+    >
+      +
+    </button>
+  </div>
+</div>
           </div>
 
           <div className="mb-3.5">
