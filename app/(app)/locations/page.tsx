@@ -33,8 +33,8 @@ export default async function LocationsPage() {
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
           {locs.map((loc) => {
             const locItems = locMap[loc];
-            const avail = locItems.filter((i) => i.status === "Available").length;
-            const missing = locItems.filter((i) => i.status === "Missing").length;
+            const avail = locItems.filter((i) => i.quantity_new > 0 || i.quantity_refurbished > 0).length;
+            const outOfStock = locItems.filter((i) => i.quantity_new === 0 && i.quantity_refurbished === 0).length;
             return (
               <Link
                 key={loc}
@@ -56,7 +56,7 @@ export default async function LocationsPage() {
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="inline-block h-2 w-2 rounded-full bg-rust" />
-                    {missing} missing
+                    {outOfStock} out of stock
                   </span>
                 </div>
               </Link>
