@@ -2,14 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { ItemStatus } from "@/types/database";
 
 async function getCurrentProfile() {
-  const supabase = createClient();
+  const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+
+  console.log("USER:", user);
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -17,8 +22,17 @@ async function getCurrentProfile() {
     .eq("id", user.id)
     .single();
 
-  if (!profile) throw new Error("Profile not found");
-  return { supabase, userId: user.id, fullName: profile.full_name };
+  console.log("PROFILE:", profile);
+
+  if (!profile) {
+    throw new Error("Profile not found");
+  }
+
+  return {
+    supabase,
+    userId: user.id,
+    fullName: profile.full_name,
+  };
 }
 
 function revalidateAll() {
@@ -31,9 +45,9 @@ function revalidateAll() {
 export interface ItemInput {
   name: string;
   category: string;
-  quantity: number;
+  quantity_new: number;
+  quantity_refurbished: number;
   location: string;
-  status: ItemStatus;
   notes: string;
 }
 
@@ -44,14 +58,33 @@ export async function addItem(input: ItemInput) {
     throw new Error("Please add a name and location.");
   }
 
+  const qtyNew = Math.max(0, input.quantity_new || 0);
+  const qtyRefurb = Math.max(0, input.quantity_refurbished || 0);
+  if (qtyNew + qtyRefurb <= 0) {
+    throw new Error("Please add at least 1 item (brand new or refurbished).");
+  }
+
+  console.log("USER ID:", userId);
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+console.log("AUTH USER:", user);
+
+console.log("INSERT DATA:", {
+  name: input.name,
+  added_by: userId,
+});
+
   const { data: item, error } = await supabase
     .from("items")
     .insert({
       name: input.name.trim(),
       category: input.category,
-      quantity: Math.max(1, input.quantity || 1),
+      quantity_new: qtyNew,
+      quantity_refurbished: qtyRefurb,
       location: input.location.trim(),
-      status: input.status,
       notes: input.notes.trim(),
       added_by: userId,
     })
@@ -64,7 +97,7 @@ export async function addItem(input: ItemInput) {
     item_id: item.id,
     item_name: item.name,
     action: "Added",
-    details: `Placed in ${item.location}`,
+    details: `Placed in ${item.location} (${qtyNew} new, ${qtyRefurb} refurbished)`,
     by_user: userId,
     by_name: fullName,
   });
@@ -83,21 +116,27 @@ export async function updateItem(itemId: string, input: ItemInput) {
   const { data: existing } = await supabase.from("items").select("*").eq("id", itemId).single();
   if (!existing) throw new Error("Item not found.");
 
+  const qtyNew = Math.max(0, input.quantity_new || 0);
+  const qtyRefurb = Math.max(0, input.quantity_refurbished || 0);
+  if (qtyNew + qtyRefurb <= 0) {
+    throw new Error("Please add at least 1 item (brand new or refurbished).");
+  }
+
   const changes: string[] = [];
   if (existing.name !== input.name.trim()) changes.push("name");
   if (existing.category !== input.category) changes.push("category");
   if (existing.location !== input.location.trim()) changes.push("location");
-  if (existing.status !== input.status) changes.push(`status → ${input.status}`);
-  if (existing.quantity !== input.quantity) changes.push("quantity");
+  if (existing.quantity_new !== qtyNew) changes.push(`New qty → ${qtyNew}`);
+  if (existing.quantity_refurbished !== qtyRefurb) changes.push(`Refurbished qty → ${qtyRefurb}`);
 
   const { error } = await supabase
     .from("items")
     .update({
       name: input.name.trim(),
       category: input.category,
-      quantity: Math.max(1, input.quantity || 1),
+      quantity_new: qtyNew,
+      quantity_refurbished: qtyRefurb,
       location: input.location.trim(),
-      status: input.status,
       notes: input.notes.trim(),
     })
     .eq("id", itemId);
@@ -109,32 +148,6 @@ export async function updateItem(itemId: string, input: ItemInput) {
     item_name: input.name.trim(),
     action: "Updated",
     details: changes.length ? `Changed: ${changes.join(", ")}` : "Details updated",
-    by_user: userId,
-    by_name: fullName,
-  });
-
-  revalidateAll();
-}
-
-export async function updateItemStatus(itemId: string, newStatus: ItemStatus) {
-  const { supabase, userId, fullName } = await getCurrentProfile();
-
-  const { data: existing } = await supabase
-    .from("items")
-    .select("name, status")
-    .eq("id", itemId)
-    .single();
-  if (!existing) throw new Error("Item not found.");
-  if (existing.status === newStatus) return;
-
-  const { error } = await supabase.from("items").update({ status: newStatus }).eq("id", itemId);
-  if (error) throw new Error(error.message);
-
-  await supabase.from("history").insert({
-    item_id: itemId,
-    item_name: existing.name,
-    action: "Status changed",
-    details: `${existing.status} → ${newStatus}`,
     by_user: userId,
     by_name: fullName,
   });

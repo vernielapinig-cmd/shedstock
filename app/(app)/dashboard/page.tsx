@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getItems, getHistory, getCurrentUserFirstName } from "@/lib/data";
-import { STATUSES } from "@/lib/constants";
 import { StatCard } from "@/components/StatCard";
 import { Icon, actionIcon } from "@/components/icons";
 import { timeAgo } from "@/lib/utils";
@@ -11,9 +10,17 @@ export default async function DashboardPage() {
     getHistory(6),
     getCurrentUserFirstName(),
   ]);
+  
+  const totalItems = items.length;
+  const totalBrandNew = items.reduce(
+    (sum, item) => sum + item.quantity_new,
+    0
+  );
 
-  const total = items.length;
-  const counts = Object.fromEntries(STATUSES.map((s) => [s.key, items.filter((i) => i.status === s.key).length]));
+const totalRefurbished = items.reduce(
+  (sum, item) => sum + item.quantity_refurbished,
+  0
+);
 
   const locMap: Record<string, number> = {};
   items.forEach((i) => {
@@ -31,8 +38,8 @@ export default async function DashboardPage() {
           <div>
             <h2 className="text-[19px] normal-case text-white md:text-[24px]">Welcome back, {firstName}</h2>
             <p className="mt-1.5 max-w-[440px] text-[13px] normal-case text-[#C9D3D0]">
-              Every tool has a place, and now every place is written down. {total} item{total === 1 ? "" : "s"} logged
-              so far.
+              Every tool has a place, and now every place is written down. {totalItems} item
+              {totalItems === 1 ? "" : "s"} logged so far.
             </p>
           </div>
           <Link href="/inventory?add=1" className="btn-primary">
@@ -42,10 +49,9 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3.5 md:grid-cols-5">
-        <StatCard num={total} label="Total Items" accent />
-        {STATUSES.map((s) => (
-          <StatCard key={s.key} num={counts[s.key] || 0} label={s.key} dot={s.dot} />
-        ))}
+        <StatCard num={totalItems} label="Total Items" accent />
+        <StatCard num={totalBrandNew} label="Brand New" />
+        <StatCard num={totalRefurbished} label="Refurbished" />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">

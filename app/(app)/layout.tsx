@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
+import { Database } from '@/types/database'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -15,10 +16,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
-    .eq("id", user.id)
     .single();
 
-  const fullName = profile?.full_name || "Household member";
+  type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+
+  const fullName = 
+    (profile as ProfileRow | null)?.full_name ??  "Household member";
 
   return (
     <div className="flex min-h-screen bg-bg">

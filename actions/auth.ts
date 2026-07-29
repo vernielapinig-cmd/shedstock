@@ -17,7 +17,7 @@ export async function login(prevState: AuthResult, formData: FormData): Promise<
     return { error: "Enter your email and password." };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
@@ -47,7 +47,7 @@ export async function signup(prevState: AuthResult, formData: FormData): Promise
     return { error: "Username can only contain letters, numbers, dots, dashes and underscores." };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: existing } = await supabase
     .from("profiles")
@@ -73,7 +73,7 @@ export async function signup(prevState: AuthResult, formData: FormData): Promise
 }
 
 export async function signInWithGoogle() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const origin = (await headers()).get("origin");
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -91,7 +91,7 @@ export async function signInWithGoogle() {
 }
 
 export async function logout() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
 }

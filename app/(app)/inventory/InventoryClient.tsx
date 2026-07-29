@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { CATEGORIES, STATUSES } from "@/lib/constants";
 import { Icon } from "@/components/icons";
 import { ItemCard } from "@/components/ItemCard";
 import { ItemFormModal } from "@/components/ItemFormModal";
@@ -29,8 +28,14 @@ export function InventoryClient({
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState(initialLocation);
-  const [status, setStatus] = useState("");
+  const [condition, setCondition] = useState(""); // dating "status", ngayon "condition"
   const [modal, setModal] = useState<Modal>(autoOpenAdd ? { kind: "form", item: null } : { kind: "none" });
+
+  const categories = useMemo(() => {
+  return [...new Set(items.map((i) => i.category))]
+    .filter(Boolean)
+    .sort();
+}, [items]);
 
   // Keep detail/edit modals showing fresh data after a mutation triggers a re-fetch.
   useEffect(() => {
@@ -50,10 +55,11 @@ export function InventoryClient({
       }
       if (category && i.category !== category) return false;
       if (location && i.location !== location) return false;
-      if (status && i.status !== status) return false;
+      if (condition === "new" && i.quantity_new <= 0) return false;
+      if (condition === "refurbished" && i.quantity_refurbished <= 0) return false;
       return true;
     });
-  }, [items, q, category, location, status]);
+  }, [items, q, category, location, condition]);
 
   return (
     <div>
@@ -86,7 +92,7 @@ export function InventoryClient({
           className="min-w-[130px] rounded-[9px] border border-border bg-surface px-3 py-2.5 text-[13px] text-ink"
         >
           <option value="">All Categories</option>
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>
@@ -105,16 +111,13 @@ export function InventoryClient({
           ))}
         </select>
         <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="min-w-[130px] rounded-[9px] border border-border bg-surface px-3 py-2.5 text-[13px] text-ink"
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          className="min-w-[150px] rounded-[9px] border border-border bg-surface px-3 py-2.5 text-[13px] text-ink"
         >
-          <option value="">All Statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s.key} value={s.key}>
-              {s.key}
-            </option>
-          ))}
+          <option value="">All Conditions</option>
+          <option value="new">Has Brand New</option>
+          <option value="refurbished">Has Refurbished</option>
         </select>
       </div>
 

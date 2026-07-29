@@ -1,6 +1,4 @@
 "use client";
-
-import { statusInfo } from "@/lib/constants";
 import { itemCode } from "@/lib/utils";
 import { Icon } from "@/components/icons";
 import type { Item } from "@/types/database";
@@ -16,7 +14,7 @@ export function ItemCard({
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
 }) {
-  const s = statusInfo(item.status);
+  const total = item.quantity_new + item.quantity_refurbished;
 
   return (
     <div
@@ -30,8 +28,8 @@ export function ItemCard({
             {item.category}
           </div>
         </div>
-        <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
-          {item.status}
+        <span className="whitespace-nowrap rounded-full bg-surface-2 px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide text-ink-soft">
+          Qty {total}
         </span>
       </div>
 
@@ -39,12 +37,22 @@ export function ItemCard({
         {itemCode(item.id)}
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {item.quantity_new > 0 && (
+          <span className="rounded-full bg-teal-bg px-2.5 py-1 text-[11px] font-bold text-teal">
+            {item.quantity_new} Brand New
+          </span>
+        )}
+        {item.quantity_refurbished > 0 && (
+          <span className="rounded-full bg-amber-bg px-2.5 py-1 text-[11px] font-bold text-amber">
+            {item.quantity_refurbished} Refurbished
+          </span>
+        )}
+      </div>
+
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[12.5px] text-ink-soft">
         <span className="flex items-center gap-1">
           <Icon name="pin" size={13} /> {item.location}
-        </span>
-        <span className="flex items-center gap-1">
-          <Icon name="layers" size={13} /> Qty {item.quantity}
         </span>
       </div>
 

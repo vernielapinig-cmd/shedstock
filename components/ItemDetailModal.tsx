@@ -1,12 +1,7 @@
 "use client";
-
-import { useTransition } from "react";
-import { statusInfo, STATUSES } from "@/lib/constants";
 import { itemCode, timeAgo } from "@/lib/utils";
 import { Icon, actionIcon } from "@/components/icons";
-import { useToast } from "@/components/ToastProvider";
-import { updateItemStatus } from "@/actions/items";
-import type { Item, HistoryEntry, ItemStatus } from "@/types/database";
+import type { Item, HistoryEntry } from "@/types/database";
 
 export function ItemDetailModal({
   item,
@@ -21,19 +16,8 @@ export function ItemDetailModal({
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
 }) {
-  const s = statusInfo(item.status);
-  const toast = useToast();
-  const [pending, startTransition] = useTransition();
   const itemHist = history.filter((h) => h.item_name === item.name).slice(0, 5);
-
-  function handleQuickStatus(newStatus: ItemStatus) {
-    if (newStatus === item.status) return;
-    startTransition(async () => {
-      await updateItemStatus(item.id, newStatus);
-      toast("Status updated");
-      onClose();
-    });
-  }
+  const total = item.quantity_new + item.quantity_refurbished;
 
   return (
     <div
@@ -49,13 +33,20 @@ export function ItemDetailModal({
         </div>
 
         <div className="px-[22px] pb-[22px] pt-5">
-          <div className="mb-3.5">
+          <div className="mb-3.5 flex flex-wrap items-center gap-2">
             <span className="inline-block rounded-[3px] bg-[#171B19] px-2 py-0.5 font-mono text-[10.5px] tracking-wide text-[#EDEFEA]">
               {itemCode(item.id)}
             </span>
-            <span className={`ml-2 rounded-full px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide ${s.badgeBg} ${s.badgeText}`}>
-              {item.status}
-            </span>
+            {item.quantity_new > 0 && (
+              <span className="rounded-full bg-teal-bg px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide text-teal">
+                {item.quantity_new} Brand New
+              </span>
+            )}
+            {item.quantity_refurbished > 0 && (
+              <span className="rounded-full bg-amber-bg px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide text-amber">
+                {item.quantity_refurbished} Refurbished
+              </span>
+            )}
           </div>
 
           <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -64,8 +55,8 @@ export function ItemDetailModal({
               <div className="mt-0.5 text-[14px] font-semibold text-ink">{item.category}</div>
             </div>
             <div className="rounded-lg bg-surface-2 px-3 py-2.5">
-              <div className="text-[10.5px] font-bold uppercase tracking-wide text-ink-faint">Quantity</div>
-              <div className="mt-0.5 text-[14px] font-semibold text-ink">{item.quantity}</div>
+              <div className="text-[10.5px] font-bold uppercase tracking-wide text-ink-faint">Total Quantity</div>
+              <div className="mt-0.5 text-[14px] font-semibold text-ink">{total}</div>
             </div>
             <div className="rounded-lg bg-surface-2 px-3 py-2.5">
               <div className="text-[10.5px] font-bold uppercase tracking-wide text-ink-faint">Location</div>
@@ -86,26 +77,6 @@ export function ItemDetailModal({
               <b>Notes:</b> {item.notes}
             </div>
           )}
-
-          <label className="mb-1.5 block text-[12px] font-semibold text-ink-soft">Quick status update</label>
-          <div className="mb-4 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-            {STATUSES.map((st) => {
-              const chosen = item.status === st.key;
-              return (
-                <button
-                  key={st.key}
-                  disabled={pending}
-                  onClick={() => handleQuickStatus(st.key)}
-                  className={`rounded-lg border-[1.5px] py-2 text-[11px] font-bold uppercase tracking-wide disabled:opacity-60 ${
-                    chosen ? `${st.badgeBg} ${st.badgeText}` : "border-border bg-surface-2 text-ink-soft"
-                  }`}
-                  style={chosen ? { borderColor: st.dot } : undefined}
-                >
-                  {st.key}
-                </button>
-              );
-            })}
-          </div>
 
           <label className="mb-1.5 block text-[12px] font-semibold text-ink-soft">Recent history for this item</label>
           <div className="mb-4">
